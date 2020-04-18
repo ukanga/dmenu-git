@@ -7,7 +7,7 @@
 
 _pkgname=dmenu
 pkgname=$_pkgname-git
-pkgver=4.6.2.gbf3deb6
+pkgver=4.9.5.gdb6093f
 pkgrel=1
 pkgdesc="A generic menu for X"
 url="http://tools.suckless.org/dmenu/"
@@ -17,8 +17,14 @@ depends=('sh' 'libxinerama' 'libxft')
 makedepends=('git')
 provides=($_pkgname)
 conflicts=($_pkgname)
-source=(git://git.suckless.org/$_pkgname)
-sha256sums=('SKIP')
+source=(git://git.suckless.org/$_pkgname
+        dmenu-xft.diff
+        dmenu-xresources-20200302-db6093f.diff
+        )
+sha256sums=('SKIP'
+            '3bac812c74bfd71e7ee6536da5a369d31095d13de957a57a4702c3b3f2776744'
+            '45dbb037c3fff5ff511767d154be58b17d5c9319755c1fae88464d6c9c31b047'
+            )
 
 pkgver() {
   cd $_pkgname
@@ -28,9 +34,16 @@ pkgver() {
 prepare() {
   cd $_pkgname
   # to use a custom config.h, place it in the package directory
-  if [[ -f ${SRCDEST}/config.h ]]; then
-      cp "${SRCDEST}/config.h" .
-  fi
+  for file in "${source[@]}"; do
+      if [[ "$file" == "config.h" ]]; then
+          # add config.h if present in source array
+          # Note: this supersedes the above sed to config.def.h
+          cp "$srcdir/$file" .
+      elif [[ "$file" == *.diff || "$file" == *.patch ]]; then
+          # add all patches present in source array
+          patch -Np1 <"$srcdir/$(basename "${file}")"
+      fi
+  done
 }
 
 build(){
